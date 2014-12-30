@@ -1,12 +1,12 @@
 {
-	"name": "mdmsoft/yii2-console",
+	"name": "deesoft/yii2-console",
 	"description": "Yii2 console command",
 	"keywords": ["yii2", "command", "migration", "sample data"],
 	"type": "yii2-extension",
 	"license": "BSD-3-Clause",
 	"support": {
-		"issues": "https://github.com/mdmsoft/yii2-gii/issues",
-		"source": "https://github.com/mdmsoft/yii2-gii"
+		"issues": "https://github.com/deesoft/yii2-console/issues",
+		"source": "https://github.com/deesoft/yii2-console"
 	},
 	"authors": [
 		{
@@ -20,7 +20,7 @@
 	},
 	"autoload": {
 		"psr-4": {
-			"mdm\\console\\": ""
+			"dee\\console\\": ""
 		}
 	},
     "extra": {

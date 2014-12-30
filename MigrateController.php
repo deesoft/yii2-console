@@ -1,6 +1,6 @@
 <?php
 
-namespace mdm\console;
+namespace dee\console;
 
 use Yii;
 use yii\helpers\ArrayHelper;
@@ -13,7 +13,7 @@ use yii\console\Exception;
  * ~~~
  * 'controlerMap' => [
  *     'migrate' => [
- *         'class' => 'mdm\console\MigrateController',
+ *         'class' => 'dee\console\MigrateController',
  *         'migrationLookup' => [
  *             '@yii/rbac/migrations',
  *             '@mdm/autonumber/migrations',

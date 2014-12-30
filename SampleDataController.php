@@ -1,6 +1,6 @@
 <?php
 
-namespace mdm\console;
+namespace dee\console;
 
 use Yii;
 use yii\db\Connection;

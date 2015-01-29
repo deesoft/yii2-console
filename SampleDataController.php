@@ -34,6 +34,29 @@ class SampleDataController extends \yii\console\Controller
      * @var \Faker\Generator
      */
     private $_generator;
+    
+    /**
+     * @var array 
+     * [
+     *     'supplier' => [
+     *         'model' => 'app\models\Supplier',
+     *         'count' => 16, // default 1
+     *         'row' => '@app/migrations/supplier.php', 
+     *     ],
+     *     'uom' => [
+     *         'model' => 'app\models\Uom',
+     *         'count' => 3,
+     *     ],
+     *     'product' => [
+     *         'model' => 'app\models\Product',
+     *         'count' => 1000,
+     *     ],
+     *     'product_uom' => [
+     *         'model' => 'app\models\ProductUom',
+     *     ]
+     * ]
+     * 
+     */
     public $samples;
 
     /**

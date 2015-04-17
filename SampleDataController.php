@@ -100,7 +100,7 @@ class SampleDataController extends \yii\console\Controller
                 }
             }
             return self::EXIT_CODE_NORMAL;
-        } elseif (in_array($sample, $this->_samples)) {
+        } elseif (in_array($sample, $this->samples)) {
             $this->load($sample, $command);
             return self::EXIT_CODE_NORMAL;
         }
@@ -117,7 +117,7 @@ class SampleDataController extends \yii\console\Controller
     {
         $exists = $command->setSql("select count(*) from {{%{$sample}}}")->queryScalar() > 0;
         if (!$exists || ($confirm && Console::confirm("Overwrote {$sample}"))) {
-            $samples = isset($this->_samples[$sample]) ? $this->_samples[$sample] : [];
+            $samples = isset($this->samples[$sample]) ? $this->samples[$sample] : [];
             $this->resolveRequired($samples, $command);
             $file = $this->sourcePath . "/{$sample}.php";
             $this->internalLoad($file, [

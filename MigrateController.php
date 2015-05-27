@@ -5,6 +5,7 @@ namespace dee\console;
 use Yii;
 use yii\helpers\ArrayHelper;
 use yii\console\Exception;
+use yii\console\controllers\MigrateController as BaseMigrateController;
 
 /**
  * MigrateController
@@ -22,11 +23,23 @@ use yii\console\Exception;
  *     ]
  * ]
  * ~~~
+ * Or simply add `migrationLookup` to application params
+ * ~~~
+ * // file config/params.php
+ *
+ * return [
+ *     'yii.migration.path' => [
+ *         '@yii/rbac/migrations',
+ *         '@mdm/autonumber/migrations',
+ *         '@mdm/upload/migrations',
+ *     ]
+ * ];
+ * ~~~
  * 
  * @author Misbahul D Munir <misbahuldmunir@gmail.com>
  * @since 1.0
  */
-class MigrateController extends \yii\console\controllers\MigrateController
+class MigrateController extends BaseMigrateController
 {
     /**
      * @var array
@@ -47,7 +60,7 @@ class MigrateController extends \yii\console\controllers\MigrateController
         if ($this->_migrationFiles === null) {
             $this->_migrationFiles = [];
             $directories = array_merge($this->migrationLookup, [$this->migrationPath]);
-            $extraPath = ArrayHelper::getValue(Yii::$app->params, 'yii.migrations');
+            $extraPath = ArrayHelper::getValue(Yii::$app->params, 'yii.migration.path');
             if (!empty($extraPath)) {
                 $directories = array_merge((array) $extraPath, $directories);
             }

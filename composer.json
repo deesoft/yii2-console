@@ -1,28 +1,29 @@
 {
-	"name": "deesoft/yii2-console",
-	"description": "Yii2 console command",
-	"keywords": ["yii2", "command", "migration", "sample data"],
-	"type": "yii2-extension",
-	"license": "BSD-3-Clause",
-	"support": {
-		"issues": "https://github.com/deesoft/yii2-console/issues",
-		"source": "https://github.com/deesoft/yii2-console"
-	},
-	"authors": [
-		{
-			"name": "Misbahul Munir",
-			"email": "misbahuldmunir@gmail.com"
-		}
-	],
-	"require": {
-		"yiisoft/yii2": "~2.0"
-	},
-	"autoload": {
-		"psr-4": {
-			"dee\\console\\": ""
-		}
-	},
+    "name": "deesoft/yii2-console",
+    "description": "Yii2 console command",
+    "keywords": ["yii2", "command", "migration", "sample data"],
+    "type": "yii2-extension",
+    "license": "BSD-3-Clause",
+    "support": {
+        "issues": "https://github.com/deesoft/yii2-console/issues",
+        "source": "https://github.com/deesoft/yii2-console"
+    },
+    "authors": [
+        {
+            "name": "Misbahul Munir",
+            "email": "misbahuldmunir@gmail.com"
+        }
+    ],
+    "require": {
+        "yiisoft/yii2": "~2.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "dee\\console\\": ""
+        }
+    },
     "extra": {
+        "bootstrap": "dee\\console\\Bootstrap",
         "branch-alias": {
             "dev-master": "1.0.x-dev"
         }

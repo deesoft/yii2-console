@@ -28,7 +28,7 @@ use yii\console\controllers\MigrateController as BaseMigrateController;
  * // file config/params.php
  *
  * return [
- *     'yii.migration.path' => [
+ *     'dee.migration.path' => [
  *         '@yii/rbac/migrations',
  *         '@mdm/autonumber/migrations',
  *         '@mdm/upload/migrations',
@@ -60,7 +60,7 @@ class MigrateController extends BaseMigrateController
         if ($this->_migrationFiles === null) {
             $this->_migrationFiles = [];
             $directories = array_merge($this->migrationLookup, [$this->migrationPath]);
-            $extraPath = ArrayHelper::getValue(Yii::$app->params, 'yii.migration.path');
+            $extraPath = ArrayHelper::getValue(Yii::$app->params, 'dee.migration.path');
             if (!empty($extraPath)) {
                 $directories = array_merge((array) $extraPath, $directories);
             }

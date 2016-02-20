@@ -5,6 +5,7 @@ namespace dee\console;
 use Yii;
 use yii\helpers\ArrayHelper;
 use yii\console\Exception;
+use yii\helpers\VarDumper;
 use yii\console\controllers\MigrateController as BaseMigrateController;
 
 /**
@@ -52,6 +53,51 @@ class MigrateController extends BaseMigrateController
     private $_migrationFiles;
 
     /**
+     * @var string 
+     */
+    public $extraPathFile = '@runtime/dee-migration-path.php';
+
+    /**
+     * @inheritdoc
+     */
+    public function init()
+    {
+        parent::init();
+        if (!empty($this->extraPathFile)) {
+            $this->extraPathFile = Yii::getAlias($this->extraPathFile);
+        }
+    }
+
+    /**
+     * @return array all directories
+     */
+    protected function getDirectories()
+    {
+        $paths = ArrayHelper::getValue(Yii::$app->params, 'dee.migration.path', []);
+        $paths = array_merge($paths, $this->migrationLookup);
+        if (!empty($this->extraPathFile) && is_file($this->extraPathFile)) {
+            $extra = require($this->extraPathFile);
+        } else {
+            $extra = [];
+        }
+        $paths = array_merge($extra, $paths);
+        $p = [];
+        foreach ($paths as $path) {
+            $p[Yii::getAlias($path,false)] = true;
+        }
+        unset($p[false]);
+        $currentPath = Yii::getAlias($this->migrationPath);
+        if (!isset($p[$currentPath])) {
+            $p[$currentPath] = true;
+            if (!empty($this->extraPathFile)) {
+                $extra[] = $this->migrationPath;
+                file_put_contents($this->extraPathFile, "<?php\nreturn " . VarDumper::export($extra) . ";\n", LOCK_EX);
+            }
+        }
+        return array_keys($p);
+    }
+
+    /**
      * List of migration class at all entire path
      * @return array
      */
@@ -59,14 +105,9 @@ class MigrateController extends BaseMigrateController
     {
         if ($this->_migrationFiles === null) {
             $this->_migrationFiles = [];
-            $directories = array_merge($this->migrationLookup, [$this->migrationPath]);
-            $extraPath = ArrayHelper::getValue(Yii::$app->params, 'dee.migration.path');
-            if (!empty($extraPath)) {
-                $directories = array_merge((array) $extraPath, $directories);
-            }
+            $directories = $this->getDirectories();
 
-            foreach (array_unique($directories) as $dir) {
-                $dir = Yii::getAlias($dir, false);
+            foreach ($directories as $dir) {
                 if ($dir && is_dir($dir)) {
                     $handle = opendir($dir);
                     while (($file = readdir($handle)) !== false) {

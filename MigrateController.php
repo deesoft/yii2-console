@@ -55,7 +55,7 @@ class MigrateController extends BaseMigrateController
     /**
      * @var string 
      */
-    public $extraPathFile = '@runtime/dee-migration-path.php';
+    public $extraFile = '@runtime/dee-migration-path.php';
 
     /**
      * @inheritdoc
@@ -63,8 +63,8 @@ class MigrateController extends BaseMigrateController
     public function init()
     {
         parent::init();
-        if (!empty($this->extraPathFile)) {
-            $this->extraPathFile = Yii::getAlias($this->extraPathFile);
+        if (!empty($this->extraFile)) {
+            $this->extraFile = Yii::getAlias($this->extraFile);
         }
     }
 
@@ -75,23 +75,20 @@ class MigrateController extends BaseMigrateController
     {
         $paths = ArrayHelper::getValue(Yii::$app->params, 'dee.migration.path', []);
         $paths = array_merge($paths, $this->migrationLookup);
-        if (!empty($this->extraPathFile) && is_file($this->extraPathFile)) {
-            $extra = require($this->extraPathFile);
-        } else {
-            $extra = [];
-        }
+        $extra = !empty($this->extraFile) && is_file($this->extraFile) ? require($this->extraFile) : [];
+
         $paths = array_merge($extra, $paths);
         $p = [];
         foreach ($paths as $path) {
-            $p[Yii::getAlias($path,false)] = true;
+            $p[Yii::getAlias($path, false)] = true;
         }
         unset($p[false]);
         $currentPath = Yii::getAlias($this->migrationPath);
         if (!isset($p[$currentPath])) {
             $p[$currentPath] = true;
-            if (!empty($this->extraPathFile)) {
+            if (!empty($this->extraFile)) {
                 $extra[] = $this->migrationPath;
-                file_put_contents($this->extraPathFile, "<?php\nreturn " . VarDumper::export($extra) . ";\n", LOCK_EX);
+                file_put_contents($this->extraFile, "<?php\nreturn " . VarDumper::export($extra) . ";\n", LOCK_EX);
             }
         }
         return array_keys($p);

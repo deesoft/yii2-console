@@ -51,8 +51,10 @@ You also can dinamically add new path from your extension via `bootstrap`.
 
 Feature
 -------
-Unlike original migration that only can `migrate/down` or `migrate/redo` with migration squence.
-You can `down` and `redo` individual migration without depend it squence. E.g, your migration history are
+
+# Partial Up, Down and Redo
+Unlike original migration that only can `up`, `down` or `redo` with migration squence.
+You can `up`, `down` and `redo` individual migration without depend it squence. E.g, your migration history are
 ```
 	(2016-02-09 02:29:14) m160201_050050_create_table_accounting
 	(2016-02-09 02:29:14) m160201_050040_create_table_inventory
@@ -65,5 +67,12 @@ You can `down` and `redo` individual migration without depend it squence. E.g, y
 ```
 You can `down` or `redo` only `m160201_050020_create_table_purchase`. Use `migrate/partial-down` or `migrate/partial-redo` to do that.
 ```
-./yii migrate/partial-down m160201_050020
+./yii migrate/down m160201_050020
+./yii migrate/redo 140527_084418
+```
+
+# Exclude Specific version from action
+
+```
+./yii migrate -e=160201_050030,140527_084418
 ```

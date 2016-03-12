@@ -18,5 +18,6 @@ class Bootstrap implements \yii\base\BootstrapInterface
     public function bootstrap($app)
     {
         Yii::$container->set('yii\console\controllers\MigrateController', 'dee\console\MigrateController');
+        Yii::$container->set('yii\mongodb\console\controllers\MigrateController', 'dee\console\MongodbMigrateController');
     }
 }

@@ -38,8 +38,7 @@ return [
     ...
     'dee.migration.path' => [
         '@yii/rbac/migrations',
-        '@mdm/autonumber/migrations',
-        '@mdm/upload/migrations',
+        // list your migration path here
     ]
 ];
 ```
@@ -55,10 +54,11 @@ You also can dinamically add new path from your extension via `bootstrap`.
 
 Feature
 -------
+### Compatible with official migrate command
 
 ### Partial Up, Down and Redo
 Unlike original migration that only can `up`, `down` or `redo` with migration squence.
-You can `up`, `down` and `redo` individual migration without depend it squence. E.g, your migration history are
+We can `up`, `down` and `redo` individual migration without depend it squence. E.g, your migration history are
 ```
 	(2016-02-09 02:29:14) m160201_050050_create_table_accounting
 	(2016-02-09 02:29:14) m160201_050040_create_table_inventory
@@ -69,7 +69,7 @@ You can `up`, `down` and `redo` individual migration without depend it squence. 
 	(2016-02-09 02:29:11) m140506_102106_rbac_init
 	(2016-02-01 04:02:51) m130524_201442_init
 ```
-You can `down` or `redo` only `m160201_050020_create_table_purchase`. Use `migrate/partial` or `migrate/partial` to do that.
+We can `down` or `redo` only `m160201_050020_create_table_purchase`. Use `migrate/partial` or `migrate/partial` to do that.
 ```
 ./yii migrate/down m160201_050020
 ./yii migrate/redo 140527_084418

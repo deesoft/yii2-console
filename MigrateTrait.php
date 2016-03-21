@@ -7,6 +7,7 @@ use yii\helpers\ArrayHelper;
 use yii\console\Exception;
 use yii\helpers\VarDumper;
 use yii\helpers\FileHelper;
+use yii\helpers\Console;
 
 /**
  * Description of MigrateTrait
@@ -165,11 +166,12 @@ trait MigrateTrait
         $migrations = [];
         $excepts = $this->getExcepts();
         foreach ($this->getMigrationFiles() as $version => $path) {
-            if (!isset($applied[substr($version, 1, 13)]) && !isset($excepts[substr($version, 1, 13)])) {
-                $migrations[] = $version;
+            $v = substr($version, 1, 13);
+            if (!isset($applied[$v]) && !isset($excepts[$v])) {
+                $migrations[$v] = $version;
             }
         }
-
+        ksort($migrations);
         return $migrations;
     }
 
@@ -255,6 +257,33 @@ trait MigrateTrait
     }
 
     /**
+     *
+     * @param string $versions
+     * @param string $part
+     * @return array
+     */
+    protected function getPartialVersion($versions, $part)
+    {
+        if ($part === 'new') {
+            $migrations = $this->getNewMigrations();
+        } else {
+            $migrations = [];
+            foreach (array_keys($this->getMigrationHistory(null)) as $class) {
+                $migrations[substr($class, 1, 13)] = $class;
+            }
+        }
+        $versions = preg_split('/\s*,\s*/', $versions);
+        $result = [];
+        foreach ($versions as $version) {
+            $matches = [];
+            if (preg_match('/^m?(\d{6}_\d{6})(_.*?)?$/', $version, $matches) && isset($migrations[$matches[1]])) {
+                $result[] = $migrations[$matches[1]];
+            }
+        }
+        return $result;
+    }
+
+    /**
      * Upgrades the application by applying new migration.
      * For example,
      *
@@ -270,28 +299,34 @@ trait MigrateTrait
      */
     public function actionPartialUp($version)
     {
-        $originalVersion = $version;
-        if (preg_match('/^m?(\d{6}_\d{6})(_.*?)?$/', $version, $matches)) {
-            $version = 'm' . $matches[1];
-        } else {
-            throw new Exception("The version argument must be either a timestamp (e.g. 101129_185401)\nor the full name of a migration (e.g. m101129_185401_create_user_table).");
+        $migrations = $this->getPartialVersion($version, 'new');
+        if (empty($migrations)) {
+            $this->stdout("No new migrations to be applied.\n", Console::FG_GREEN);
+            return self::EXIT_CODE_NORMAL;
         }
+        $n = count($migrations);
+        $this->stdout("Total $n new " . ($n === 1 ? 'migration' : 'migrations') . " to be applied:\n", Console::FG_YELLOW);
 
-        $migrations = $this->getNewMigrations();
         foreach ($migrations as $migration) {
-            if (strpos($migration, $version . '_') === 0) {
-                if ($this->confirm("Apply the $migration migration?")) {
-                    if (!$this->migrateUp($migration)) {
-                        echo "\nMigration failed.\n";
-
-                        return self::EXIT_CODE_ERROR;
-                    }
-                    return self::EXIT_CODE_NORMAL;
-                }
-                return;
-            }
+            $this->stdout("\t$migration\n");
         }
-        throw new Exception("Unable to find the version '$originalVersion'.");
+        $this->stdout("\n");
+
+        $applied = 0;
+        if ($this->confirm('Apply the above ' . ($n === 1 ? 'migration' : 'migrations') . '?')) {
+            foreach ($migrations as $migration) {
+                if (!$this->migrateUp($migration)) {
+                    $this->stdout("\n$applied from $n " . ($applied === 1 ? 'migration was' : 'migrations were') . " applied.\n", Console::FG_RED);
+                    $this->stdout("\nMigration failed. The rest of the migrations are canceled.\n", Console::FG_RED);
+
+                    return self::EXIT_CODE_ERROR;
+                }
+                $applied++;
+            }
+
+            $this->stdout("\n$n " . ($n === 1 ? 'migration was' : 'migrations were') . " applied.\n", Console::FG_GREEN);
+            $this->stdout("\nMigrated up successfully.\n", Console::FG_GREEN);
+        }
     }
 
     /**
@@ -310,28 +345,33 @@ trait MigrateTrait
      */
     public function actionPartialDown($version)
     {
-        $originalVersion = $version;
-        if (preg_match('/^m?(\d{6}_\d{6})(_.*?)?$/', $version, $matches)) {
-            $version = 'm' . $matches[1];
-        } else {
-            throw new Exception("The version argument must be either a timestamp (e.g. 101129_185401)\nor the full name of a migration (e.g. m101129_185401_create_user_table).");
+        $migrations = $this->getPartialVersion($version, 'history');
+        if (empty($migrations)) {
+            $this->stdout("No migration has been done before.\n", Console::FG_GREEN);
+            return self::EXIT_CODE_NORMAL;
         }
+        $n = count($migrations);
+        $this->stdout("Total $n new " . ($n === 1 ? 'migration' : 'migrations') . " to be referted:\n", Console::FG_YELLOW);
 
-        $migrations = array_keys($this->getMigrationHistory(null));
         foreach ($migrations as $migration) {
-            if (strpos($migration, $version . '_') === 0) {
-                if ($this->confirm("Revert the $migration migration?")) {
-                    if (!$this->migrateDown($migration)) {
-                        echo "\nMigration failed.\n";
-
-                        return self::EXIT_CODE_ERROR;
-                    }
-                    return self::EXIT_CODE_NORMAL;
-                }
-                return;
-            }
+            $this->stdout("\t$migration\n");
         }
-        throw new Exception("Unable to find the version '$originalVersion'.");
+        $this->stdout("\n");
+
+        $reverted = 0;
+        if ($this->confirm('Revert the above ' . ($n === 1 ? 'migration' : 'migrations') . '?')) {
+            foreach ($migrations as $migration) {
+                if (!$this->migrateDown($migration)) {
+                    $this->stdout("\n$reverted from $n " . ($reverted === 1 ? 'migration was' : 'migrations were') . " reverted.\n", Console::FG_RED);
+                    $this->stdout("\nMigration failed. The rest of the migrations are canceled.\n", Console::FG_RED);
+
+                    return self::EXIT_CODE_ERROR;
+                }
+                $reverted++;
+            }
+            $this->stdout("\n$n " . ($n === 1 ? 'migration was' : 'migrations were') . " reverted.\n", Console::FG_GREEN);
+            $this->stdout("\nMigrated down successfully.\n", Console::FG_GREEN);
+        }
     }
 
     /**
@@ -352,33 +392,37 @@ trait MigrateTrait
      */
     public function actionPartialRedo($version)
     {
-        $originalVersion = $version;
-        if (preg_match('/^m?(\d{6}_\d{6})(_.*?)?$/', $version, $matches)) {
-            $version = 'm' . $matches[1];
-        } else {
-            throw new Exception("The version argument must be either a timestamp (e.g. 101129_185401)\nor the full name of a migration (e.g. m101129_185401_create_user_table).");
+        $migrations = $this->getPartialVersion($version, 'history');
+        if (empty($migrations)) {
+            $this->stdout("No migration has been done before.\n", Console::FG_GREEN);
+            return self::EXIT_CODE_NORMAL;
         }
-
-        $migrations = array_keys($this->getMigrationHistory(null));
+        
+        $n = count($migrations);
+        $this->stdout("Total $n " . ($n === 1 ? 'migration' : 'migrations') . " to be redone:\n", Console::FG_YELLOW);
         foreach ($migrations as $migration) {
-            if (strpos($migration, $version . '_') === 0) {
-                if ($this->confirm("Redo the $migration migration?")) {
-                    if (!$this->migrateDown($migration)) {
-                        echo "\nMigration failed.\n";
-
-                        return self::EXIT_CODE_ERROR;
-                    }
-                    if (!$this->migrateUp($migration)) {
-                        echo "\nMigration failed.\n";
-
-                        return self::EXIT_CODE_ERROR;
-                    }
-                    return self::EXIT_CODE_NORMAL;
-                }
-                return;
-            }
+            $this->stdout("\t$migration\n");
         }
-        throw new Exception("Unable to find the version '$originalVersion'.");
+        $this->stdout("\n");
+
+        if ($this->confirm('Redo the above ' . ($n === 1 ? 'migration' : 'migrations') . '?')) {
+            foreach ($migrations as $migration) {
+                if (!$this->migrateDown($migration)) {
+                    $this->stdout("\nMigration failed. The rest of the migrations are canceled.\n", Console::FG_RED);
+
+                    return self::EXIT_CODE_ERROR;
+                }
+            }
+            foreach (array_reverse($migrations) as $migration) {
+                if (!$this->migrateUp($migration)) {
+                    $this->stdout("\nMigration failed. The rest of the migrations are canceled.\n", Console::FG_RED);
+
+                    return self::EXIT_CODE_ERROR;
+                }
+            }
+            $this->stdout("\n$n " . ($n === 1 ? 'migration was' : 'migrations were') ." redone.\n", Console::FG_GREEN);
+            $this->stdout("\nMigration redone successfully.\n", Console::FG_GREEN);
+        }
     }
 
     /**

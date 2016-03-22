@@ -258,19 +258,25 @@ trait MigrateTrait
 
     /**
      *
-     * @param string $versions
      * @param string $part
+     * @param string $versions
      * @return array
      */
-    protected function getPartialVersion($versions, $part)
+    public function getVersions($part, $versions = 'all')
     {
         if ($part === 'new') {
             $migrations = $this->getNewMigrations();
-        } else {
+        } elseif ($part === 'history') {
             $migrations = [];
             foreach (array_keys($this->getMigrationHistory(null)) as $class) {
                 $migrations[substr($class, 1, 13)] = $class;
             }
+        } else {
+            $this->stdout("\nUnknown part '{$part}'.\n", Console::FG_RED);
+            return self::EXIT_CODE_ERROR;
+        }
+        if ($versions === 'all') {
+            return array_values($migrations);
         }
         $versions = preg_split('/\s*,\s*/', $versions);
         $result = [];
@@ -299,7 +305,7 @@ trait MigrateTrait
      */
     public function actionPartialUp($version)
     {
-        $migrations = $this->getPartialVersion($version, 'new');
+        $migrations = $this->getVersions('new', $version);
         if (empty($migrations)) {
             $this->stdout("No new migrations to be applied.\n", Console::FG_GREEN);
             return self::EXIT_CODE_NORMAL;
@@ -345,7 +351,7 @@ trait MigrateTrait
      */
     public function actionPartialDown($version)
     {
-        $migrations = $this->getPartialVersion($version, 'history');
+        $migrations = $this->getVersions('history', $version);
         if (empty($migrations)) {
             $this->stdout("No migration has been done before.\n", Console::FG_GREEN);
             return self::EXIT_CODE_NORMAL;
@@ -392,12 +398,12 @@ trait MigrateTrait
      */
     public function actionPartialRedo($version)
     {
-        $migrations = $this->getPartialVersion($version, 'history');
+        $migrations = $this->getVersions('history', $version);
         if (empty($migrations)) {
             $this->stdout("No migration has been done before.\n", Console::FG_GREEN);
             return self::EXIT_CODE_NORMAL;
         }
-        
+
         $n = count($migrations);
         $this->stdout("Total $n " . ($n === 1 ? 'migration' : 'migrations') . " to be redone:\n", Console::FG_YELLOW);
         foreach ($migrations as $migration) {
@@ -420,7 +426,7 @@ trait MigrateTrait
                     return self::EXIT_CODE_ERROR;
                 }
             }
-            $this->stdout("\n$n " . ($n === 1 ? 'migration was' : 'migrations were') ." redone.\n", Console::FG_GREEN);
+            $this->stdout("\n$n " . ($n === 1 ? 'migration was' : 'migrations were') . " redone.\n", Console::FG_GREEN);
             $this->stdout("\nMigration redone successfully.\n", Console::FG_GREEN);
         }
     }

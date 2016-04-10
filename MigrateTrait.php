@@ -193,7 +193,7 @@ trait MigrateTrait
      */
     public function actionUp($limit = 0)
     {
-        if (is_int($limit)) {
+        if (is_numeric($limit)) {
             return parent::actionUp($limit);
         } else {
             return $this->actionPartialUp($limit);
@@ -220,7 +220,7 @@ trait MigrateTrait
      */
     public function actionDown($limit = 1)
     {
-        if (is_integer($limit) || $limit === 'all') {
+        if (is_numeric($limit) || $limit === 'all') {
             return parent::actionDown($limit);
         } else {
             return $this->actionPartialDown($limit);
@@ -249,7 +249,7 @@ trait MigrateTrait
      */
     public function actionRedo($limit = 1)
     {
-        if (is_integer($limit) || $limit === 'all') {
+        if (is_numeric($limit) || $limit === 'all') {
             return parent::actionRedo($limit);
         } else {
             return $this->actionPartialRedo($limit);

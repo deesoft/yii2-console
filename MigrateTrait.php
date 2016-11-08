@@ -12,6 +12,8 @@ use yii\helpers\Console;
 /**
  * Description of MigrateTrait
  *
+ * @property array $migrationNamespaces
+ * 
  * @author Misbahul D Munir <misbahuldmunir@gmail.com>
  * @since 1.2
  */
@@ -71,6 +73,10 @@ trait MigrateTrait
                 }
             }
             $this->_paths = array_keys($p);
+            foreach ($this->migrationNamespaces as $namespace) {
+                $path = str_replace('/', DIRECTORY_SEPARATOR, Yii::getAlias('@' . str_replace('\\', '/', $namespace)));
+                $this->_paths[$namespace] = $path;
+            }
         }
         return $this->_paths;
     }
@@ -85,7 +91,7 @@ trait MigrateTrait
             $this->_migrationFiles = [];
             $directories = $this->getDirectories();
 
-            foreach ($directories as $dir) {
+            foreach ($directories as $namespace => $dir) {
                 if ($dir && is_dir($dir)) {
                     $handle = opendir($dir);
                     while (($file = readdir($handle)) !== false) {
@@ -93,8 +99,9 @@ trait MigrateTrait
                             continue;
                         }
                         $path = $dir . DIRECTORY_SEPARATOR . $file;
-                        if (preg_match('/^(m(\d{6}_\d{6})_.*?)\.php$/', $file, $matches) && is_file($path)) {
-                            $this->_migrationFiles[$matches[1]] = $path;
+                        if (preg_match('/^(m(\d{6}_\d{6})\D.*?)\.php$/is', $file, $matches) && is_file($path)) {
+                            $class = (is_int($namespace) ? '' : $namespace . '\\') . $matches[1];
+                            $this->_migrationFiles[$class] = $path;
                         }
                     }
                     closedir($handle);
@@ -123,14 +130,13 @@ trait MigrateTrait
      */
     protected function getMigrationHistory($limit)
     {
-        $historiy = parent::getMigrationHistory($limit);
-        $excepts = $this->getExcepts();
-        foreach ($historiy as $version => $time) {
-            if (isset($excepts[substr($version, 1, 13)])) {
-                unset($historiy[$version]);
+        $history = parent::getMigrationHistory($limit);
+        foreach ($history as $class => $time) {
+            if ($this->isExcept($class)) {
+                unset($history[$class]);
             }
         }
-        return $historiy;
+        return $history;
     }
 
     /**
@@ -143,7 +149,7 @@ trait MigrateTrait
             if (!empty($this->excepts)) {
                 foreach (preg_split('/\s*,\s*/', $this->excepts) as $version) {
                     $matches = null;
-                    if (preg_match('/^m?(\d{6}_\d{6})(_.*?)?$/', $version, $matches)) {
+                    if (preg_match('/^m?(\d{6}_\d{6})(\D.*?)?$/is', $version, $matches)) {
                         $excepts[$matches[1]] = $matches[1];
                     }
                 }
@@ -159,20 +165,28 @@ trait MigrateTrait
     protected function getNewMigrations()
     {
         $applied = [];
-        foreach ($this->getMigrationHistory(null) as $version => $time) {
-            $applied[substr($version, 1, 13)] = true;
+        foreach ($this->getMigrationHistory(null) as $class => $time) {
+            $applied[trim($class,'\\')] = true;
         }
 
         $migrations = [];
-        $excepts = $this->getExcepts();
-        foreach ($this->getMigrationFiles() as $version => $path) {
-            $v = substr($version, 1, 13);
-            if (!isset($applied[$v]) && !isset($excepts[$v])) {
-                $migrations[$v] = $version;
+        foreach ($this->getMigrationFiles() as $class => $time) {
+            if (!isset($applied[$class]) && !$this->isExcept($class)) {
+                $migrations[] = $class;
             }
         }
         ksort($migrations);
         return $migrations;
+    }
+
+    protected function isExcept($class)
+    {
+        foreach ($this->getExcepts() as $version) {
+            if (strpos($class, $version) !== false) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
@@ -267,10 +281,7 @@ trait MigrateTrait
         if ($part === 'new') {
             $migrations = $this->getNewMigrations();
         } elseif ($part === 'history') {
-            $migrations = [];
-            foreach (array_keys($this->getMigrationHistory(null)) as $class) {
-                $migrations[substr($class, 1, 13)] = $class;
-            }
+            $migrations = array_keys($this->getMigrationHistory(null));
         } else {
             $this->stdout("\nUnknown part '{$part}'.\n", Console::FG_RED);
             return self::EXIT_CODE_ERROR;
@@ -282,8 +293,13 @@ trait MigrateTrait
         $result = [];
         foreach ($versions as $version) {
             $matches = [];
-            if (preg_match('/^m?(\d{6}_\d{6})(_.*?)?$/', $version, $matches) && isset($migrations[$matches[1]])) {
-                $result[] = $migrations[$matches[1]];
+            if (preg_match('/^m?(\d{6}_\d{6})(\D.*?)?$/is', $version, $matches)) {
+                foreach ($migrations as $migration) {
+                    if (strpos($migration, $matches[1]) !== false) {
+                        $result[] = $migration;
+                        break;
+                    }
+                }
             }
         }
         return $result;

@@ -6,6 +6,7 @@ use Yii;
 use Cron\CronExpression;
 use yii\console\Controller;
 use Symfony\Component\Process\Process;
+use yii\helpers\FileHelper;
 
 /**
  * Description of SchedulerController
@@ -32,6 +33,7 @@ class SchedulerController extends Controller
      * @var array
      */
     private $_mapping = [
+        '@minutes' => '* * * * *',
         '@fiveMinutes' => '*/5 * * * *',
         '@tenMinutes' => '*/10 * * * *',
     ];
@@ -44,7 +46,7 @@ class SchedulerController extends Controller
         $scriptFile = $this->scriptFile;
         $cwd = dirname($scriptFile);
         $log = Yii::getAlias('@runtime/scheduler') . date('/Ym/d') . '.log';
-        $time = date('Y-m-d H:i:s');
+        FileHelper::createDirectory(dirname($log), 0777);
         foreach ($this->commands as $route => $expression) {
             if (is_int($route)) {
                 $route = $expression;
@@ -52,7 +54,7 @@ class SchedulerController extends Controller
             } elseif (isset($this->_mapping[$expression])) {
                 $expression = $this->_mapping[$expression];
             }
-            if ($expression === true || CronExpression::factory($expression)->isDue($time)) {
+            if ($expression === true || CronExpression::factory($expression)->isDue()) {
                 $command = PHP_BINARY . " $scriptFile $route 2>&1 >>$log";
                 $process = new Process($command, $cwd);
                 $process->start();

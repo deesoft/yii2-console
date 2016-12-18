@@ -12,7 +12,7 @@ use yii\helpers\FileHelper;
  * Description of SchedulerController
  *
  * @property string $scriptFile
- * @property array $commands
+ * @property array $mapping
  *
  * @author Misbahul D Munir <misbahuldmunir@gmail.com>
  * @since 1.0

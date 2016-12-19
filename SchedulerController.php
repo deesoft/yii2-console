@@ -36,6 +36,15 @@ class SchedulerController extends Controller
         '@minutes' => '* * * * *',
         '@fiveMinutes' => '*/5 * * * *',
         '@tenMinutes' => '*/10 * * * *',
+        '@sunday' => '0 0 * * 0',
+        '@monday' => '0 0 * * 1',
+        '@tuesday' => '0 0 * * 2',
+        '@wednesday' => '0 0 * * 3',
+        '@thursday' => '0 0 * * 4',
+        '@friday' => '0 0 * * 5',
+        '@saturday' => '0 0 * * 6',
+        '@weekday' => '0 0 * * 1-5',
+        '@weekend' => '0 0 * * 0,6',
     ];
 
     /**

@@ -33,7 +33,7 @@ class SchedulerController extends Controller
      * @var array
      */
     private $_mapping = [
-        '@minutes' => '* * * * *',
+        '@minutes' => true,
         '@fiveMinutes' => '*/5 * * * *',
         '@tenMinutes' => '*/10 * * * *',
         '@sunday' => '0 0 * * 0',
@@ -63,7 +63,7 @@ class SchedulerController extends Controller
             } elseif (isset($this->_mapping[$expression])) {
                 $expression = $this->_mapping[$expression];
             }
-            if ($expression === true || CronExpression::factory($expression)->isDue()) {
+            if ($expression === true || $this->isDue($expression)) {
                 $command = PHP_BINARY . " $scriptFile $route 2>&1 >>$log";
                 $process = new Process($command, $cwd);
                 $process->start();
@@ -120,5 +120,10 @@ class SchedulerController extends Controller
         foreach ($values as $key => $value) {
             $this->_mapping[$key] = $value;
         }
+    }
+
+    protected function isDue($expression)
+    {
+        return CronExpression::factory($expression)->isDue();
     }
 }

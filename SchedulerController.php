@@ -3,7 +3,6 @@
 namespace dee\console;
 
 use Yii;
-use Cron\CronExpression;
 use yii\console\Controller;
 use Symfony\Component\Process\Process;
 use yii\helpers\FileHelper;
@@ -22,30 +21,26 @@ class SchedulerController extends Controller
     /**
      *
      * @var array
+     * ```php
+     * [
+     *     'migrate/up --interactive=0' => '@daily',
+     * ]
+     * ```
      */
     public $commands = [];
     /**
+     * @var string|array
+     */
+    public $cron = 'dee\console\CronExpression';
+    /**
      *
+     * @var bool execute job as asynchronous
+     */
+    public $asynchron = true;
+    /**
      * @var string
      */
     private $_scriptFile;
-    /**
-     * @var array
-     */
-    private $_mapping = [
-        '@minutes' => true,
-        '@fiveMinutes' => '*/5 * * * *',
-        '@tenMinutes' => '*/10 * * * *',
-        '@sunday' => '0 0 * * 0',
-        '@monday' => '0 0 * * 1',
-        '@tuesday' => '0 0 * * 2',
-        '@wednesday' => '0 0 * * 3',
-        '@thursday' => '0 0 * * 4',
-        '@friday' => '0 0 * * 5',
-        '@saturday' => '0 0 * * 6',
-        '@weekday' => '0 0 * * 1-5',
-        '@weekend' => '0 0 * * 0,6',
-    ];
 
     /**
      *
@@ -56,17 +51,22 @@ class SchedulerController extends Controller
         $cwd = dirname($scriptFile);
         $log = Yii::getAlias('@runtime/scheduler') . date('/Ym/d') . '.log';
         FileHelper::createDirectory(dirname($log), 0777);
+
+        /* @var $cron CronExpression */
+        $cron = Yii::createObject($this->cron);
         foreach ($this->commands as $route => $expression) {
             if (is_int($route)) {
                 $route = $expression;
                 $expression = true;
-            } elseif (isset($this->_mapping[$expression])) {
-                $expression = $this->_mapping[$expression];
             }
-            if ($expression === true || $this->isDue($expression)) {
+            if ($cron->isDue($expression)) {
                 $command = PHP_BINARY . " $scriptFile $route 2>&1 >>$log";
                 $process = new Process($command, $cwd);
-                $process->start();
+                if ($this->asynchron) {
+                    $process->start();
+                } else {
+                    $process->run();
+                }
             }
         }
     }
@@ -100,30 +100,5 @@ class SchedulerController extends Controller
         } else {
             $this->_scriptFile = null;
         }
-    }
-
-    /**
-     *
-     * @return array
-     */
-    public function getMapping()
-    {
-        return $this->_mapping;
-    }
-
-    /**
-     *
-     * @param array $values
-     */
-    public function setMapping(array $values)
-    {
-        foreach ($values as $key => $value) {
-            $this->_mapping[$key] = $value;
-        }
-    }
-
-    protected function isDue($expression)
-    {
-        return CronExpression::factory($expression)->isDue();
     }
 }

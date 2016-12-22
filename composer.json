@@ -16,8 +16,7 @@
     ],
     "require": {
         "yiisoft/yii2": ">=2.0.4",
-        "symfony/process": ">=2.4",
-        "mtdowling/cron-expression": "~1.0"
+        "symfony/process": ">=2.4"
     },
     "autoload": {
         "psr-4": {

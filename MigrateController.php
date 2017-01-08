@@ -47,6 +47,10 @@ class MigrateController extends BaseMigrateController
     /**
      * @var string 
      */
-    protected $paramVar = 'dee.migration.path';
+    protected $lookupParamName = 'dee.migration.path';
+    /**
+     * @var string
+     */
+    protected $nsParamName = 'dee.migration.ns';
 
 }

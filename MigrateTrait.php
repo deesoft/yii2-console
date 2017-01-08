@@ -52,7 +52,7 @@ trait MigrateTrait
     protected function getDirectories()
     {
         if ($this->_paths === null) {
-            $paths = ArrayHelper::getValue(Yii::$app->params, $this->paramVar, []);
+            $paths = ArrayHelper::getValue(Yii::$app->params, $this->lookupParamName, []);
             $paths = array_merge($paths, $this->migrationLookup);
             $extra = !empty($this->extraFile) && is_file($this->extraFile = Yii::getAlias($this->extraFile)) ?
                 require($this->extraFile) : [];
@@ -73,7 +73,9 @@ trait MigrateTrait
                 }
             }
             $this->_paths = array_keys($p);
-            foreach ($this->migrationNamespaces as $namespace) {
+            $namespaces = ArrayHelper::getValue(Yii::$app->params, $this->nsParamName, []);
+            $namespaces = array_merge($namespaces, $this->migrationNamespaces);
+            foreach ($namespaces as $namespace) {
                 $path = str_replace('/', DIRECTORY_SEPARATOR, Yii::getAlias('@' . str_replace('\\', '/', $namespace)));
                 $this->_paths[$namespace] = $path;
             }
@@ -99,7 +101,7 @@ trait MigrateTrait
                             continue;
                         }
                         $path = $dir . DIRECTORY_SEPARATOR . $file;
-                        if (preg_match('/^(m(\d{6}_\d{6})\D.*?)\.php$/is', $file, $matches) && is_file($path)) {
+                        if (preg_match('/^(m(\d{6}_?\d{6})\D.*?)\.php$/is', $file, $matches) && is_file($path)) {
                             $class = (is_int($namespace) ? '' : $namespace . '\\') . $matches[1];
                             $this->_migrationFiles[$class] = $path;
                         }
@@ -107,8 +109,6 @@ trait MigrateTrait
                     closedir($handle);
                 }
             }
-
-            ksort($this->_migrationFiles);
         }
 
         return $this->_migrationFiles;
@@ -148,8 +148,7 @@ trait MigrateTrait
             $excepts = [];
             if (!empty($this->excepts)) {
                 foreach (preg_split('/\s*,\s*/', $this->excepts) as $version) {
-                    $matches = null;
-                    if (preg_match('/^m?(\d{6}_\d{6})(\D.*?)?$/is', $version, $matches)) {
+                    if (preg_match('/m?(\d{6}_?\d{6})(\D.*?)?$/is', $version, $matches)) {
                         $excepts[$matches[1]] = $matches[1];
                     }
                 }
@@ -172,11 +171,13 @@ trait MigrateTrait
         $migrations = [];
         foreach ($this->getMigrationFiles() as $class => $time) {
             if (!isset($applied[$class]) && !$this->isExcept($class)) {
-                $migrations[] = $class;
+                if(preg_match('/m(\d{6}_?\d{6})(\D.*)?$/is', $class, $matches)){
+                    $migrations[$matches[1]] = $class;
+                }
             }
         }
         ksort($migrations);
-        return $migrations;
+        return array_values($migrations);
     }
 
     protected function isExcept($class)
@@ -293,7 +294,7 @@ trait MigrateTrait
         $result = [];
         foreach ($versions as $version) {
             $matches = [];
-            if (preg_match('/^m?(\d{6}_\d{6})(\D.*?)?$/is', $version, $matches)) {
+            if (preg_match('/m?(\d{6}_?\d{6})(\D.*?)?$/is', $version, $matches)) {
                 foreach ($migrations as $migration) {
                     if (strpos($migration, $matches[1]) !== false) {
                         $result[] = $migration;

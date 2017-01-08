@@ -46,6 +46,10 @@ class MongodbMigrateController extends BaseMigrateController
     /**
      * @var string
      */
-    protected $paramVar = 'dee.migration.mongopath';
+    protected $lookupParamName = 'dee.migration.mongopath';
+    /**
+     * @var string
+     */
+    protected $nsParamName = 'dee.migration.mongons';
 
 }

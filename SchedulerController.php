@@ -45,7 +45,7 @@ class SchedulerController extends Controller
     /**
      *
      */
-    public function actionIndex()
+    public function actionIndex($debug = false)
     {
         $scriptFile = $this->scriptFile;
         $cwd = dirname($scriptFile);
@@ -54,12 +54,14 @@ class SchedulerController extends Controller
 
         /* @var $cron CronExpression */
         $cron = Yii::createObject($this->cron);
+        $routes = [];
         foreach ($this->commands as $route => $expression) {
             if (is_int($route)) {
                 $route = $expression;
                 $expression = true;
             }
             if ($cron->isDue($expression)) {
+                $routes[] = $route;
                 $command = PHP_BINARY . " $scriptFile $route 2>&1 >>$log";
                 $process = new Process($command, $cwd);
                 if ($this->asynchron) {
@@ -68,6 +70,9 @@ class SchedulerController extends Controller
                     $process->run();
                 }
             }
+        }
+        if ($debug) {
+            echo date('Y-m-d H:i:s => [') . implode(', ', $routes) . "]\n";
         }
     }
 

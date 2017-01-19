@@ -37,6 +37,8 @@ class SchedulerController extends Controller
      * @var bool execute job as asynchronous
      */
     public $asynchron = true;
+
+    public $timeout = 600;
     /**
      * @var string
      */
@@ -63,7 +65,7 @@ class SchedulerController extends Controller
             if ($cron->isDue($expression)) {
                 $routes[] = $route;
                 $command = PHP_BINARY . " $scriptFile $route 2>&1 >>$log";
-                $process = new Process($command, $cwd);
+                $process = new Process($command, $cwd, null, null, $this->timeout);
                 if ($this->asynchron) {
                     $process->start();
                 } else {

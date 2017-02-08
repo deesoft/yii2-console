@@ -38,7 +38,7 @@ class SchedulerController extends Controller
      */
     public $asynchron = true;
 
-    public $timeout = 600;
+    public $timeout = 60;
     /**
      * @var string
      */
@@ -68,6 +68,7 @@ class SchedulerController extends Controller
                 $process = new Process($command, $cwd, null, null, $this->timeout);
                 if ($this->asynchron) {
                     $process->start();
+                    sleep(1);
                 } else {
                     $process->run();
                 }

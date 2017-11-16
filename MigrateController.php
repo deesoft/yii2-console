@@ -41,6 +41,10 @@ class MigrateController extends BaseMigrateController
 
     use MigrateTrait;
     /**
+     * @var string
+     */
+    public $baseMigrationClass = 'yii\console\Migration';
+    /**
      * @var string 
      */
     public $extraFile = '@runtime/dee-migration/path.php';

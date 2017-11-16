@@ -103,7 +103,18 @@ trait MigrateTrait
                         $path = $dir . DIRECTORY_SEPARATOR . $file;
                         if (preg_match('/^(m(\d{6}_?\d{6})\D.*?)\.php$/is', $file, $matches) && is_file($path)) {
                             $class = (is_int($namespace) ? '' : $namespace . '\\') . $matches[1];
-                            $this->_migrationFiles[$class] = $path;
+                            if ($this->baseMigrationClass) {
+                                try {
+                                    require_once $path;
+                                    if (is_subclass_of($class, $this->baseMigrationClass)) {
+                                        $this->_migrationFiles[$class] = $path;
+                                    }
+                                } catch (\Exception $exc) {
+                                    echo $exc->getMessage();
+                                }
+                            }else{
+                                $this->_migrationFiles[$class] = $path;
+                            }
                         }
                     }
                     closedir($handle);
@@ -165,13 +176,13 @@ trait MigrateTrait
     {
         $applied = [];
         foreach ($this->getMigrationHistory(null) as $class => $time) {
-            $applied[trim($class,'\\')] = true;
+            $applied[trim($class, '\\')] = true;
         }
 
         $migrations = [];
         foreach ($this->getMigrationFiles() as $class => $time) {
             if (!isset($applied[$class]) && !$this->isExcept($class)) {
-                if(preg_match('/m(\d{6}_?\d{6})(\D.*)?$/is', $class, $matches)){
+                if (preg_match('/m(\d{6}_?\d{6})(\D.*)?$/is', $class, $matches)) {
                     $migrations[$matches[1]] = $class;
                 }
             }

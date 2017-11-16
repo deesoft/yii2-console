@@ -42,6 +42,10 @@ class MongodbMigrateController extends BaseMigrateController
     /**
      * @var string
      */
+    public $baseMigrationClass = 'yii\mongodb\Migration';
+    /**
+     * @var string
+     */
     public $extraFile = '@runtime/dee-migration/mongo-path.php';
     /**
      * @var string

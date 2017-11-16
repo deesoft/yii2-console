@@ -63,15 +63,18 @@ trait MigrateTrait
                 $p[Yii::getAlias($path, false)] = true;
             }
             unset($p[false]);
-            $currentPath = Yii::getAlias($this->migrationPath);
-            if (!isset($p[$currentPath])) {
-                $p[$currentPath] = true;
-                if (!empty($this->extraFile)) {
-                    $extra[] = $this->migrationPath;
-                    FileHelper::createDirectory(dirname($this->extraFile));
-                    file_put_contents($this->extraFile, "<?php\nreturn " . VarDumper::export($extra) . ";\n", LOCK_EX);
+            if ($this->migrationPath !== null && !is_array($this->migrationPath)) {
+                $currentPath = Yii::getAlias($this->migrationPath);
+                if (!isset($p[$currentPath])) {
+                    $p[$currentPath] = true;
+                    if (!empty($this->extraFile)) {
+                        $extra[] = $this->migrationPath;
+                        FileHelper::createDirectory(dirname($this->extraFile));
+                        file_put_contents($this->extraFile, "<?php\nreturn " . VarDumper::export($extra) . ";\n", LOCK_EX);
+                    }
                 }
             }
+
             $this->_paths = array_keys($p);
             $namespaces = ArrayHelper::getValue(Yii::$app->params, $this->nsParamName, []);
             $namespaces = array_merge($namespaces, $this->migrationNamespaces);
@@ -112,7 +115,7 @@ trait MigrateTrait
                                 } catch (\Exception $exc) {
                                     echo $exc->getMessage();
                                 }
-                            }else{
+                            } else {
                                 $this->_migrationFiles[$class] = $path;
                             }
                         }

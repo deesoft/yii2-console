@@ -164,8 +164,8 @@ class CronExpression extends Object
         }
         $current = $this->_parts[$i];
         if (preg_match(self::PART_REGEX, $part, $matches)){
-            if (empty($matches[3]) { // without step
-                if (empty($matches[2]) { // without range
+            if (empty($matches[3])) { // without step
+                if (empty($matches[2])) { // without range
                     return $matches[1] == '*' || $matches[1] == $current;
                 } else {
                     list($from, $to) = explode('-', $matches[1]);
@@ -173,7 +173,7 @@ class CronExpression extends Object
                 }
             } else { // with step
                 $step = int_val(substr($matches[3], 1));
-                if (empty($matches[2]) { // without range
+                if (empty($matches[2])) { // without range
                     $from = $matches[1] == '*' ? 0 : $matches[1];
                     return $current >= $from && ($current - $from) % $step == 0;
                 } else {

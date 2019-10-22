@@ -16,6 +16,7 @@ use yii\base\Object;
  */
 class CronExpression extends Object
 {
+    const PART_REGEX = '/^(\*|\d+(-\d+)?)(\/\d+)?$/';
     /**
      *
      * @var int 
@@ -118,7 +119,10 @@ class CronExpression extends Object
             return true;
         }
         try {
-            $parts = explode(' ', $expression);
+            $parts = preg_split('/\s+/', trim($expression));
+            if (count($parts) !== 5) {
+                return false;
+            }
             foreach ($parts as $i => $part) {
                 $valid = false;
                 foreach (explode(',', $part) as $p) {
@@ -126,6 +130,16 @@ class CronExpression extends Object
                         $valid = true;
                         break;
                     }
+                }
+                if (!$valid && $i == 4 && $this->_parts[4] == 0) {
+                    $this->_parts[4] = 7;
+                    foreach (explode(',', $part) as $p) {
+                        if ($this->test($i, $p)) {
+                            $valid = true;
+                            break;
+                        }
+                    }
+                    $this->_parts[4] = 0;
                 }
                 if (!$valid) {
                     return false;
@@ -149,37 +163,24 @@ class CronExpression extends Object
             return false;
         }
         $current = $this->_parts[$i];
-        if ($part === '*' || $part == $current) {
-            return true;
-        }
-        if (strpos($part, '/') === false) {
-            $range = explode('-', $part, 2);
-            if (empty($range[1])) {
-                return false;
+        if (preg_match(self::PART_REGEX, $part, $matches)){
+            if (empty($matches[3]) { // without step
+                if (empty($matches[2]) { // without range
+                    return $matches[1] == '*' || $matches[1] == $current;
+                } else {
+                    list($from, $to) = explode('-', $matches[1]);
+                    return $from <= $current && $current <= $to;
+                }
+            } else { // with step
+                $step = int_val(substr($matches[3], 1));
+                if (empty($matches[2]) { // without range
+                    $from = $matches[1] == '*' ? 0 : $matches[1];
+                    return $current >= $from && ($current - $from) % $step == 0;
+                } else {
+                    list($from, $to) = explode('-', $matches[1]);
+                    return $from <= $current && $current <= $to  && ($current - $from) % $step == 0;
+                }
             }
-            $valid = $current >= $range[0] && $current <= $range[1];
-            if ($valid) {
-                return true;
-            }
-            return $i == 4 && $current == 0 && 7 >= $range[0] && 7 <= $range[1];
         }
-
-        // step time
-        $parts = explode('/', $part, 2);
-        if (empty($parts[1]) || (int) $parts[1] <= 0) {
-            return false;
-        }
-        list($part, $step) = $parts;
-        if ($part === '*' || $part == '0') {
-            return (int) ($current % $step) == 0;
-        }
-        $range = explode('-', $part, 2);
-        $offset = $range[0];
-        $to = isset($range[1]) ? $range[1] : $current;
-        $valid = $current >= $offset && $current <= $to && (int) (($current - $offset) % $step) == 0;
-        if ($valid) {
-            return true;
-        }
-        return $i == 4 && $current == 0 && 7 >= $offset && 7 <= $to && (int) ((7 - $offset) % $step) == 0;
     }
 }

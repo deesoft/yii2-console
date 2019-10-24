@@ -23,7 +23,11 @@ class SchedulerController extends Controller
      * @var array
      * ```php
      * [
-     *     'migrate/up --interactive=0' => '@daily',
+     *     'migrate/up' => '@daily',
+     *     [
+     *         'command' => ['migrate', '-i'],
+     *         'cron' => '@daily',
+     *     ],
      * ]
      * ```
      */
@@ -59,12 +63,19 @@ class SchedulerController extends Controller
         $routes = [];
         foreach ($this->commands as $route => $expression) {
             if (is_int($route)) {
-                $route = $expression;
-                $expression = true;
+                if (is_array($expression)) {
+                    $route = $expression['command'];
+                    $expression = empty($expression['cron']) ? '@hourly' : $expression['cron'];
+                } else {
+                    $route = $expression;
+                    $expression = '@hourly';
+                }
             }
-            if ($cron->isDue($expression)) {
-                $routes[] = $route;
-                $command = PHP_BINARY . " $scriptFile $route 2>&1 >>$log";
+            if ($expression === true || $cron->isDue($expression)) {
+                $route = (array) $route;
+                $routes[] = implode(' ', $route);
+                $command = array_merge([PHP_BINARY, $scriptFile], $route);
+                $command = implode(" ", array_map('escapeshellarg', $command)) . " 2>&1 >>$log";
                 $process = new Process($command, $cwd, null, null, $this->timeout);
                 if ($this->asynchron) {
                     $process->start();

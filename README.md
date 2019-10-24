@@ -81,3 +81,32 @@ We can `down` or `redo` only `m160201_050020_create_table_purchase`. Use `migrat
 ./yii migrate -e=160201_050030,140527_084418
 ./yii migrate/down all -e=m140506_102106_rbac_init
 ```
+
+
+Cron Job
+---------
+
+```php
+// console config
+
+[
+    ...
+    'controllerMap' => [
+        'cron' => [
+	    'class' => 'dee\console\SchedulerController',
+	    'commands' => [
+	        'hello' => '0 0/3 * * *',
+		[
+		    'command' => ['migrate/up', '-interaction=0'],
+		    'cron' => '@daily',
+		]
+	    ]
+	]
+    ]
+]
+```
+
+Then add `cron` command to your system crontab
+```sh
+* * * * *   cd /path/to/your/app && /usr/bin/php yii cron
+```
